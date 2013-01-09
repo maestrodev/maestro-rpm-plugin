@@ -1,0 +1,117 @@
+[
+  {
+    "name": "RPM build",
+    "description": "Build a RPM package",
+    "license": "Apache 2.0",
+    "author": "Carlos Sanchez",
+    "version": "updated at build time",
+    "class": "MaestroDev::RpmWorker",
+    "type": "ruby",
+    "dependencies": [],
+    "task": {
+      "command": "/rpm/build",
+      "tool_name": "Package",
+      "icon":"rpm.png",
+      "inputs": {
+        "path": {
+          "required": false,
+          "type": "String",
+          "value": null,
+          "description": "Path to run rpmbuild from"
+        },
+        "macros": {
+          "required": false,
+          "type": "String",
+          "value": null,
+          "description": "rpmbuild macros parameter"
+        },
+        "buildroot": {
+          "required": false,
+          "type": "String",
+          "value": null,
+          "description": "rpmbuild buildroot parameter"
+        },
+        "defines": {
+          "required": false,
+          "type": "Array",
+          "value": [],
+          "description": "rpmbuild defines parameter"
+        },
+        "specfile": {
+          "required": true,
+          "type": "String",
+          "value": null,
+          "description": "RPM spec file"
+        },
+        "rpmbuild_options": {
+          "required": false,
+          "type": "String",
+          "value": null,
+          "description": "any other options to pass to rpmbuild"
+        }
+      },
+      "outputs": {
+        "command": {
+          "type": "String"
+        }
+      }
+    },
+    "source_types": [
+      {
+        "name": "RPM",
+        "options": {
+          "path": "String",
+          "macros": "String",
+          "buildroot": "String",
+          "specfile": "String",
+          "rpmbuild_options": "String"
+        }
+      }
+    ]
+  },
+  {
+    "name": "RPM createrepo",
+    "description": "Create a RPM repository from packages",
+    "license": "Apache 2.0",
+    "author": "Carlos Sanchez",
+    "version": "updated at build time",
+    "class": "MaestroDev::RpmWorker",
+    "type": "ruby",
+    "dependencies": [],
+    "task": {
+      "command": "/rpm/createrepo",
+      "tool_name": "Package",
+      "icon":"rpm.png",
+      "inputs": {
+        "repo_dir": {
+          "required": true,
+          "type": "String",
+          "value": null,
+          "description": "Directory to create the repository from"
+        },
+        "createrepo_options": {
+          "required": false,
+          "type": "Array",
+          "value": null,
+          "description": "options to pass to createrepo"
+        }
+      },
+      "outputs": {
+        "command": {
+          "type": "String"
+        }
+      }
+    },
+    "source_types": [
+      {
+        "name": "RPM build",
+        "options": {
+          "path": "String",
+          "macros": "String",
+          "buildroot": "String",
+          "specfile": "String"
+        }
+      }
+    ]
+  }
+]
