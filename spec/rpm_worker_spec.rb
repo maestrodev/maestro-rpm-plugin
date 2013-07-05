@@ -32,7 +32,7 @@ describe MaestroDev::RpmWorker do
       @worker.stub(:validate_output)
       Maestro::Shell.any_instance.stub(:to_s => "")
       defines_s = @defines.map{|k,v| "--define \"#{k} #{v}\""}.join(" ")
-      Maestro::Shell.any_instance.should_receive(:create_script).with(" cd /tmp && rpmbuild -bb --macros #{@macros} --buildroot /tmp/buildroot #{defines_s} --define \"x y\" /tmp/test.spec\n")
+      Maestro::Shell.any_instance.should_receive(:create_script).with("cd /tmp && rpmbuild -bb --macros #{@macros} --buildroot /tmp/buildroot #{defines_s} --define \"x y\" /tmp/test.spec")
       @worker.build
 
       wi.error.should be_nil
@@ -63,7 +63,7 @@ describe MaestroDev::RpmWorker do
       @worker.stub(:run)
       @worker.stub(:validate_output)
       Maestro::Shell.any_instance.stub(:to_s => "")
-      Maestro::Shell.any_instance.should_receive(:create_script).with(" createrepo -s sha --update /tmp/repo\n")
+      Maestro::Shell.any_instance.should_receive(:create_script).with("createrepo -s sha --update /tmp/repo")
       @worker.createrepo
 
       wi.error.should be_nil
