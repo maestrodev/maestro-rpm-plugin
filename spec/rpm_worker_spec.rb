@@ -3,10 +3,10 @@
 require 'spec_helper'
 require 'rpm_worker'
 
-describe MaestroDev::RpmWorker do
+describe MaestroDev::RpmPlugin::RpmWorker do
 
   before(:each) do
-    @worker = MaestroDev::RpmWorker.new
+    @worker = MaestroDev::RpmPlugin::RpmWorker.new
     @worker.stub(:send_workitem_message)
   end
 

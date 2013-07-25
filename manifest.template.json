@@ -5,7 +5,7 @@
     "license": "Apache 2.0",
     "author": "Carlos Sanchez",
     "version": "updated at build time",
-    "class": "MaestroDev::RpmWorker",
+    "class": "MaestroDev::RpmPlugin::RpmWorker",
     "type": "ruby",
     "dependencies": [],
     "task": {
@@ -75,7 +75,7 @@
     "license": "Apache 2.0",
     "author": "Carlos Sanchez",
     "version": "updated at build time",
-    "class": "MaestroDev::RpmWorker",
+    "class": "MaestroDev::RpmPlugin::RpmWorker",
     "type": "ruby",
     "dependencies": [],
     "task": {
