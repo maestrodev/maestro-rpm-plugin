@@ -1,70 +1,78 @@
-require 'maestro_agent'
+require 'maestro_plugin'
+require 'maestro_shell'
 
 module MaestroDev
-  module RpmPlugin
-    class RpmWorker < Maestro::ShellParticipant
+  module Plugin
+    class RpmWorker < Maestro::MaestroWorker
   
-      def log(message, exception)
-        msg = "#{message}: #{exception.message}\n#{exception.backtrace.join("\n")}"
-        Maestro.log.error msg
-        set_error(msg)
-      end
-  
-      def log_output(msg, level=:debug)
-        Maestro.log.send(level, msg)
-        write_output "#{msg}\n"
-      end
-  
-      def validate(required_fields)
-        errors = []
-        required_fields.each{|s|
-          errors << "missing #{s}" if get_field(s).nil? || get_field(s).empty?
-        }
-        unless errors.empty?
-          msg = "Invalid configuration: #{errors.join("\n")}"
-          Maestro.log.error msg
-          set_error msg
-        end
-        return errors
-      end
-  
-      def build
-        log_output("Starting RPM", :info)
-  
-        errors = validate(["specfile"])
-        return unless errors.empty?
-  
-        defines = get_field('defines') || []
-        macros = get_field('macros')
-        buildroot = get_field('buildroot')
-        define_s = defines.empty? ? "" : defines.map{|d| "--define \"#{d}\""}.join(" ")
-        macros_s = macros.nil? ? "" : "--macros #{macros}"
-        buildroot_s = buildroot.nil? ? "" : "--buildroot #{buildroot}"
+      def build  
+        errors = validate_build_parameters
   
         # Shell execution
-        command = "cd #{path()} && rpmbuild -bb #{macros_s} #{buildroot_s} #{define_s} #{get_field('rpmbuild_options')} #{get_field('specfile')}"
-        set_field("command_string", command)
-        environment = ""
-        set_field("environment", environment)
-  
-        execute
+        command = "cd #{@path} && #{@rpmbuild_executable} -bb #{@macros_s} #{@buildroot_s} #{@define_s} #{@rpmbuild_options} #{@specfile}"
+        set_field("command", command)
+
+        shell = Maestro::Util::Shell.new
+        shell.create_script(command)
+        write_output("\nRunning command:\n----------\n#{command.chomp}\n----------\n")
+        shell.run_script_with_delegate(self, :on_output)
+        raise PluginError, "Error building rpm" unless shell.exit_code.success?
       end
   
       def createrepo
-        log_output("Starting RPM createrepo", :info)
-  
-        errors = validate(["repo_dir"])
-        return unless errors.empty?
-  
-        options = get_field('createrepo_options') || []
-  
+        errors = validate_createrepo_parameters
+    
         # Shell execution
-        command = "createrepo #{options.join(" ")} #{get_field('repo_dir')}"
-        set_field("command_string", command)
-        environment = ""
-        set_field("environment", environment)
+        command = "#{@createrepo_executable} #{@options.join(' ')} #{@repo_dir}"
+        set_field("command", command)
   
-        execute
+        shell = Maestro::Util::Shell.new
+        shell.create_script(command)
+        write_output("\nRunning command:\n----------\n#{command.chomp}\n----------\n")
+        shell.run_script_with_delegate(self, :on_output)
+        raise PluginError, "Error creting repo" unless shell.exit_code.success?
+      end
+  
+      def on_output(text)
+        write_output(text, :buffer => true)
+      end
+        
+      ###########
+      # PRIVATE #
+      ###########
+      private
+  
+      def validate_createrepo_parameters
+        errors = []
+
+        @createrepo_executable = get_field('createrepo_executable', 'createrepo')
+        @repo_dir = get_field('repo_dir', '')
+        @options = get_field('createrepo_options', [])
+
+        errors << 'missing field repo_dir' if @repo_dir.empty?
+
+        raise ConfigError, "Config Errors: #{errors.join(', ')}" unless errors.empty?
+      end
+
+      def validate_build_parameters
+        errors = []
+
+        @rpmbuild_executable = get_field('rpmbuild_executable', 'rpm')
+        @specfile = get_field('specfile', '')
+        @defines = get_field('defines', [])
+        @macros = get_field('macros', '')
+        @buildroot = get_field('buildroot', '')
+        @rpmbuild_options = get_field('rpmbuild_options', '')
+        @path = get_field('path', get_field('scm_path', ''))
+
+        @define_s = @defines.empty? ? "" : @defines.map{|d| "--define \"#{d}\""}.join(" ")
+        @macros_s = @macros.empty? ? "" : "--macros #{@macros}"
+        @buildroot_s = @buildroot.empty? ? "" : "--buildroot #{@buildroot}"
+  
+        errors << 'missing field specfile' if @specfile.empty?
+        errors << 'missing field path' if @path.empty?
+
+        raise ConfigError, "Config Errors: #{errors.join(', ')}" unless errors.empty?
       end
     end
   end

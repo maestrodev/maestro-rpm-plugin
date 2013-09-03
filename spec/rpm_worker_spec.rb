@@ -3,11 +3,10 @@
 require 'spec_helper'
 require 'rpm_worker'
 
-describe MaestroDev::RpmPlugin::RpmWorker do
+describe MaestroDev::Plugin::RpmWorker do
 
   before(:each) do
-    @worker = MaestroDev::RpmPlugin::RpmWorker.new
-    @worker.stub(:send_workitem_message)
+    Maestro::MaestroWorker.mock!
   end
 
   describe 'build' do
@@ -21,30 +20,28 @@ describe MaestroDev::RpmPlugin::RpmWorker do
         "buildroot" => "/tmp/buildroot",
         "defines" => @defines.map{|k,v| "#{k} #{v}"},
         "specfile" => "/tmp/test.spec",
-        "rpmbuild_options" => "--define \"x y\""
+        "rpmbuild_options" => "--define \"x y\"",
+        "rpmbuild_executable" => 'echo Happy'
       }
+      @workitem = {'fields' => @fields}
     end
 
     it 'should build an rpm' do
-      wi = Ruote::Workitem.new({"fields" => @fields})
-      @worker.stub(:workitem => wi.to_h)
-      @worker.stub(:run)
-      @worker.stub(:validate_output)
-      Maestro::Shell.any_instance.stub(:to_s => "")
-      defines_s = @defines.map{|k,v| "--define \"#{k} #{v}\""}.join(" ")
-      Maestro::Shell.any_instance.should_receive(:create_script).with("cd /tmp && rpmbuild -bb --macros #{@macros} --buildroot /tmp/buildroot #{defines_s} --define \"x y\" /tmp/test.spec")
-      @worker.build
+      subject.perform(:build, @workitem)
 
-      wi.error.should be_nil
+      defines_s = @defines.map{|k,v| "--define \"#{k} #{v}\""}.join(" ")
+
+      @workitem['fields']['command'].should include(defines_s)
+      @workitem['fields']['__error__'].should be_nil
     end
 
     it 'should fail with empty fields' do
-      wi = Ruote::Workitem.new({"fields" => { "path" => "/tmp" } })
-      @worker.stub(:workitem => wi.to_h)
-      @worker.should_not_receive(:execute)
-      @worker.build
+      wi = {"fields" => {} }
 
-      wi.error.should eq("Invalid configuration: missing specfile")
+      subject.perform(:build, wi)
+
+      wi['fields']['__error__'].should include("missing field specfile")
+      wi['fields']['__error__'].should include("missing field path")
     end
   end
 
@@ -53,29 +50,23 @@ describe MaestroDev::RpmPlugin::RpmWorker do
     before(:each) do
       @fields = {
         "createrepo_options" => ["-s sha", "--update"],
-        "repo_dir" => "/tmp/repo"
+        "repo_dir" => "/tmp/repo",
+        'createrepo_executable' => 'echo Joy'
       }
+      @workitem = {'fields' => @fields}
     end
 
     it 'should create a rpm repository' do
-      wi = Ruote::Workitem.new({"fields" => @fields})
-      @worker.stub(:workitem => wi.to_h)
-      @worker.stub(:run)
-      @worker.stub(:validate_output)
-      Maestro::Shell.any_instance.stub(:to_s => "")
-      Maestro::Shell.any_instance.should_receive(:create_script).with("createrepo -s sha --update /tmp/repo")
-      @worker.createrepo
+      subject.perform(:createrepo, @workitem)
 
-      wi.error.should be_nil
+      @workitem['fields']['__error__'].should be_nil
     end
 
     it 'should fail with empty fields' do
-      wi = Ruote::Workitem.new({"fields" => {} })
-      @worker.stub(:workitem => wi.to_h)
-      @worker.should_not_receive(:execute)
-      @worker.createrepo
+      wi = {"fields" => {} }
+      subject.perform(:createrepo, wi)
 
-      wi.error.should eq("Invalid configuration: missing repo_dir")
+      wi['fields']['__error__'].should include("missing field repo_dir")
     end
   end
 end

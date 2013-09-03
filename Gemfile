@@ -1,6 +1,7 @@
 source "https://rubygems.org"
 
-gem 'maestro_agent', '>= 1.7.0'
+gem 'maestro_plugin', '>= 0.0.17'
+gem 'maestro_shell', '>= 0.0.8'
 
 group :development do
   gem 'maestro-plugin-rake-tasks'
